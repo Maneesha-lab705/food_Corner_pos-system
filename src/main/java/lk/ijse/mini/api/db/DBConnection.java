@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 public class DBConnection {
-    private final static String URL = "jdbc:mysql://localhost:3306/Fitcore";
+    private final static String URL = "jdbc:mysql://localhost:3306/javaee";
     private final static Properties props = new Properties();
 
         static {

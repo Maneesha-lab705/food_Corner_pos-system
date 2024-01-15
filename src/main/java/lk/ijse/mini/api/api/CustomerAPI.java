@@ -1,4 +1,4 @@
-package lk.ijse.mini.api;
+package lk.ijse.mini.api.api;
 
 
 import jakarta.json.bind.Jsonb;
@@ -9,12 +9,14 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lk.ijse.mini.api.db.DBProcess;
+import lk.ijse.mini.api.bo.custom.BOImpl.CustomerBOImpl;
+import lk.ijse.mini.api.bo.custom.CustomerBO;
 import lk.ijse.mini.api.dto.CustomerDTO;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
+import java.util.ArrayList;
 
 @WebServlet(name ="customer",urlPatterns = "/customer",
         initParams = {
@@ -26,12 +28,9 @@ import java.sql.*;
         ,loadOnStartup = 1
 )
 
-public class Customer extends HttpServlet {
+public class CustomerAPI extends HttpServlet {
     Connection connection;
-//    String SAVE_DATA ="INSERT INTO customer (id,name,address,email,contact) VALUES(?,?,?,?,?)" ;
-    String GET_DATA ="SELECT * FROM customer WHERE id = ?" ;
-
-    String UPDATE_DATA = "UPDATE customer SET name=?,city=?, email=? WHERE id=?";
+CustomerBO customerBO =new CustomerBOImpl();
 
     @Override
     public void init() throws ServletException {
@@ -53,12 +52,11 @@ public class Customer extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // TODO: 12/2/2023 catch
-
         if(req.getContentType() != null && req.getContentType().toLowerCase().startsWith("application/json")){
             Jsonb jsonb = JsonbBuilder.create();
-            CustomerDTO customerDTO = jsonb.fromJson(req.getReader(),CustomerDTO.class);
-            var dbProcess = new DBProcess();
-            boolean result = dbProcess.saveCustomer(customerDTO, connection);
+            CustomerDTO customerDTO = jsonb.fromJson(req.getReader(), CustomerDTO.class);
+
+            boolean result = customerBO.saveCustomer(customerDTO);
             if (result) {
                 resp.setStatus(HttpServletResponse.SC_OK);
                 resp.getWriter().write("Student information saved successfully.");
@@ -67,46 +65,61 @@ public class Customer extends HttpServlet {
             }
         }else{
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            System.out.println("hi");
         }
     }
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String id = req.getParameter("id");
+//        if (req.getContentType() == null || !req.getContentType().toLowerCase().startsWith("application/json")) {
+//            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+//        } else {
+//            Jsonb jsonb = JsonbBuilder.create();
+//            CustomerDTO customerDTO = jsonb.fromJson(req.getReader(), CustomerDTO.class);
+//            customerBO.getCustomer(customerDTO.getId());
+//  }
+        ArrayList<CustomerDTO> allCustomer = customerBO.getAllCustomer(connection);
 
-        PrintWriter writer = resp.getWriter();
-        resp.setContentType("text/html");
-
-        var dbProcess = new DBProcess();
-        CustomerDTO customerDTO = dbProcess.getCustomer(connection , id);
-        System.out.println(customerDTO.getName()+"---"+customerDTO.getId());
         Jsonb jsonb = JsonbBuilder.create();
+
         try {
-            var json = jsonb.toJson(customerDTO);
+            var json = jsonb.toJson(allCustomer);
             resp.setContentType("application/json");
             resp.getWriter().write(json);
         } catch (IOException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             throw new RuntimeException(e);
         }
-//
-//        try {
-//            PreparedStatement preparedStatement =connection.prepareStatement(GET_DATA);
-//            preparedStatement.setString(1,id);
-//            ResultSet resultSet = preparedStatement.executeQuery();
-//            if (resultSet.next()){
-//                String name = resultSet.getString(1);
-//                String city = resultSet.getString(2);
-//                String email = resultSet.getString(3);
-//
-//                writer.println(name+" "+city+" "+email);
-//            }else {
-//                writer.println("not found");
-//            }
-//
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (req.getContentType() == null || !req.getContentType().toLowerCase().startsWith("application/json")) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        } else {
+            Jsonb jsonb = JsonbBuilder.create();
+            CustomerDTO customerDTO = jsonb.fromJson(req.getReader(), CustomerDTO.class);
+            customerBO.deleteCustomer(customerDTO.getId());
+        }
+    }
+
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if(req.getContentType() != null && req.getContentType().toLowerCase().startsWith("application/json")){
+            Jsonb jsonb = JsonbBuilder.create();
+            CustomerDTO customerDTO = jsonb.fromJson(req.getReader(), CustomerDTO.class);
+
+
+
+            boolean result = customerBO.updateCustomer(customerDTO);
+            if (result) {
+                resp.setStatus(HttpServletResponse.SC_OK);
+                resp.getWriter().write("Student information update successfully.");
+            } else {
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to update student information.");
+            }
+        }else{
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
+
     }
 }

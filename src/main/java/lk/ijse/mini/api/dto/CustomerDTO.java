@@ -14,8 +14,4 @@ public class CustomerDTO {
     private String email;
     private Integer contact;
 
-    public CustomerDTO(String id, String name) {
-        this.id=id;
-        this.name=name;
-    }
 }
