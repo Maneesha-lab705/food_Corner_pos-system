@@ -41,10 +41,6 @@ CustomerBO customerBO =new CustomerBOImpl();
             String url =getServletConfig().getInitParameter("db-url");
             Class.forName(getServletConfig().getInitParameter("db-class"));
             this.connection = DriverManager.getConnection(url,user,password);
-
-            System.out.println(user);
-            System.out.println(password);
-            System.out.println(url);
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
